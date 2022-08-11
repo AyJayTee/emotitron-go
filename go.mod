@@ -2,7 +2,10 @@ module github.com/AyJayTee/emotitron-go
 
 go 1.18
 
-require github.com/bwmarrin/discordgo v0.25.0
+require (
+	github.com/bwmarrin/discordgo v0.25.0
+	github.com/go-sql-driver/mysql v1.6.0
+)
 
 require (
 	github.com/gorilla/websocket v1.4.2 // indirect

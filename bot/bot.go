@@ -1,16 +1,20 @@
 package bot
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/AyJayTee/emotitron-go/components"
 	"github.com/bwmarrin/discordgo"
 )
 
+var db *sql.DB
+
 // Starts and returns a pointer to the bot session
-func Start(token string) {
+func Start(token string, dbconnection *sql.DB) {
 	s, err := discordgo.New("Bot " + token)
 
 	if err != nil {
@@ -23,6 +27,9 @@ func Start(token string) {
 
 	// Add handlers
 	s.AddHandler(messageCreate)
+
+	// Store database connection
+	db = dbconnection
 
 	// Open a connection
 	err = s.Open()
@@ -46,6 +53,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if m.Content == "ping" {
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
+		components.PingDatabase(db)
 	}
 
 	if m.Content == "pong" {
