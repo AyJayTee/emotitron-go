@@ -61,12 +61,32 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// Check for invoking command
+	// Check for invoking proper command
 	for _, c := range commands {
 		if strings.HasPrefix(m.Content, commandPrefix+c) {
-			invokeCommand(c)
+			msg, err := invokeCommand(c, strings.Split(m.Content[len(c)+2:], " ")...)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, err.Error())
+				return
+			}
+			if msg != "" {
+				s.ChannelMessageSend(m.ChannelID, msg)
+			}
 			return
 		}
+	}
+
+	// Check for invoking custom command
+	if strings.HasPrefix(m.Content, commandPrefix) {
+		msg, err := components.GetCommand(strings.Split(m.Content[len(commandPrefix):], " "))
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+		if msg != "" {
+			s.ChannelMessageSend(m.ChannelID, msg)
+		}
+		return
 	}
 
 	if m.Content == "ping" {
@@ -83,11 +103,22 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func invokeCommand(command string, args ...string) {
+func invokeCommand(command string, args ...string) (string, error) {
 	switch command {
 	case "add":
-		components.AddCommand(args[0], args[1])
+		msg, err := components.AddCommand(args)
+		if err != nil {
+			return "", err
+		}
+		return msg, nil
+
 	case "remove":
-		components.RemoveCommand(args[0])
+		msg, err := components.RemoveCommand(args)
+		if err != nil {
+			return "", err
+		}
+		return msg, nil
 	}
+
+	return "", nil
 }

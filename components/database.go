@@ -37,25 +37,71 @@ func PingDatabase() {
 	fmt.Println("Pinged the database")
 }
 
-// Adds a value to the database
-func CommitToDatabase() error {
+// Inserts a custom command into the database
+func InsertCustomCommand(command customCommand) error {
+	query := `INSERT INTO customcommands (command_name, command_result) VALUES (?, ?)`
+
+	// Create 5 second timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	// Prepare the statement
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("Error %s when prepararing sql query", err)
+		return err
+	}
+	defer stmt.Close()
+
+	// Execute the statement
+	res, err := stmt.ExecContext(ctx, command.name, command.result)
+	if err != nil {
+		log.Printf("Error %s when executing sql query", err)
+		return err
+	}
+
+	// Print the rows affected
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when getting rows affected", err)
+		return err
+	}
+	log.Printf("%d command created ", rows)
 	return nil
 }
 
-// Removes a value from the database
-func RemoveFromDatabase() error {
-	return nil
-}
+// Get the value of a custom command
+func GetCustomCommandValue(commandName string) (string, error) {
+	query := `SELECT command_result FROM customcommands WHERE command_name = ?`
 
-// Reads a value from the database
-func FetchFromDatabase() (string, error) {
-	return "", nil
+	// Create a 5 second timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	// Prepare the statment
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("Error %s when preparing sql query", err)
+		return "", err
+	}
+	defer stmt.Close()
+
+	// Scan the result to a variable
+	var result string
+	row := stmt.QueryRowContext(ctx, commandName)
+	if err := row.Scan(&result); err != nil {
+		return "", err
+	}
+
+	log.Println("Fetched command for command:", commandName)
+
+	return result, nil
 }
 
 func CreateTable() {
-	query := `CREATE TABLE IF NOT EXISTS customcommands(command_id int primary key auto_increment, command_name text,  
-        command_result text)`
+	query := `CREATE TABLE IF NOT EXISTS customcommands(command_id int primary key auto_increment, command_name text, command_result text)`
 
+	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
 
