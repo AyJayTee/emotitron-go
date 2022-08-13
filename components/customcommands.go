@@ -27,6 +27,17 @@ func AddCommand(args []string) (string, error) {
 
 // Removes a custom command from the database
 func RemoveCommand(args []string) (string, error) {
+	// Verify that the args are of correct format
+	if len(args) != 1 {
+		return "", errors.New("correct usage is !remove [command name]")
+	}
+
+	// Remove the command from the database
+	err := RemoveCustomCommand(args[0])
+	if err != nil {
+		return "", err
+	}
+
 	return "Command successfully deleted!", nil
 }
 

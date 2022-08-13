@@ -54,19 +54,12 @@ func InsertCustomCommand(command customCommand) error {
 	defer stmt.Close()
 
 	// Execute the statement
-	res, err := stmt.ExecContext(ctx, command.name, command.result)
+	_, err = stmt.ExecContext(ctx, command.name, command.result)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
 	}
-
-	// Print the rows affected
-	rows, err := res.RowsAffected()
-	if err != nil {
-		log.Printf("Error %s when getting rows affected", err)
-		return err
-	}
-	log.Printf("%d command created ", rows)
+	log.Println("Command created:", command.name)
 	return nil
 }
 
@@ -93,9 +86,36 @@ func GetCustomCommandValue(commandName string) (string, error) {
 		return "", err
 	}
 
-	log.Println("Fetched command for command:", commandName)
+	log.Println("Fetched result for command:", commandName)
 
 	return result, nil
+}
+
+// Removes a custom command from the database
+func RemoveCustomCommand(commandName string) error {
+	query := `DELETE FROM customcommands WHERE command_name = ?`
+
+	// Create a 5 second timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	// Prepare the statement
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("Error %s when preparing sql query", err)
+		return err
+	}
+	defer stmt.Close()
+
+	// Execute the query
+	_, err = stmt.ExecContext(ctx, commandName)
+	if err != nil {
+		log.Printf("Error %s when executing the sql query", err)
+		return err
+	}
+
+	log.Println("Command deleted:", commandName)
+	return nil
 }
 
 func CreateTable() {

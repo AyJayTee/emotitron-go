@@ -80,6 +80,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, commandPrefix) {
 		msg, err := components.GetCommand(strings.Split(m.Content[len(commandPrefix):], " "))
 		if err != nil {
+			if err.Error() == "sql: no rows in result set" {
+				// Command does not exist so ignore this case
+				return
+			}
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 			return
 		}
