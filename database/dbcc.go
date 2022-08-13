@@ -1,44 +1,18 @@
-package components
+package database
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"time"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
-var db *sql.DB
-
-// Initializes the db conection
-func StartDatabase() {
-	dbconn, err := sql.Open("mysql", "root:password@tcp(db:3306)/emotitron_db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	db = dbconn
-}
-
-// Cleanly closes the db connection
-func ShutdownDatabase() {
-	db.Close()
-}
-
-// Pings the database
-func PingDatabase() {
-	err := db.Ping()
-	if err != nil {
-		fmt.Println("Error pinging database", err)
-		return
-	}
-
-	fmt.Println("Pinged the database")
+type CustomCommand struct {
+	Name   string
+	Result string
 }
 
 // Inserts a custom command into the database
-func InsertCustomCommand(command customCommand) error {
+func InsertCustomCommand(command CustomCommand) error {
 	query := `INSERT INTO customcommands (command_name, command_result) VALUES (?, ?)`
 
 	// Create 5 second timeout
@@ -54,12 +28,12 @@ func InsertCustomCommand(command customCommand) error {
 	defer stmt.Close()
 
 	// Execute the statement
-	_, err = stmt.ExecContext(ctx, command.name, command.result)
+	_, err = stmt.ExecContext(ctx, command.Name, command.Result)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
 	}
-	log.Println("Command created:", command.name)
+	log.Println("Command created:", command.Name)
 	return nil
 }
 
@@ -116,26 +90,4 @@ func RemoveCustomCommand(commandName string) error {
 
 	log.Println("Command deleted:", commandName)
 	return nil
-}
-
-func CreateTable() {
-	query := `CREATE TABLE IF NOT EXISTS customcommands(command_id int primary key auto_increment, command_name text, command_result text)`
-
-	// Create a 5 second timeout
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFunc()
-
-	res, err := db.ExecContext(ctx, query)
-	if err != nil {
-		log.Printf("Error %s when creating customcommands table", err)
-		return
-	}
-
-	rows, err := res.RowsAffected()
-	if err != nil {
-		log.Printf("Error %s when getting rows affected", err)
-		return
-	}
-
-	log.Printf("Rows affected when creating table: %d", rows)
 }

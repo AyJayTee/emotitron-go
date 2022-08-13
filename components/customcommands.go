@@ -2,12 +2,9 @@ package components
 
 import (
 	"errors"
-)
 
-type customCommand struct {
-	name   string
-	result string
-}
+	"github.com/AyJayTee/emotitron-go/database"
+)
 
 // Adds a custom command to the database
 func AddCommand(args []string) (string, error) {
@@ -17,7 +14,7 @@ func AddCommand(args []string) (string, error) {
 	}
 
 	// Add the command to the database
-	err := InsertCustomCommand(customCommand{args[0], args[1]})
+	err := database.InsertCustomCommand(database.CustomCommand{Name: args[0], Result: args[1]})
 	if err != nil {
 		return "", err
 	}
@@ -33,7 +30,7 @@ func RemoveCommand(args []string) (string, error) {
 	}
 
 	// Remove the command from the database
-	err := RemoveCustomCommand(args[0])
+	err := database.RemoveCustomCommand(args[0])
 	if err != nil {
 		return "", err
 	}
@@ -49,7 +46,7 @@ func GetCommand(args []string) (string, error) {
 	}
 
 	// Fetch the command from the database
-	result, err := GetCustomCommandValue(args[0])
+	result, err := database.GetCustomCommandValue(args[0])
 	if err != nil {
 		return "", err
 	}

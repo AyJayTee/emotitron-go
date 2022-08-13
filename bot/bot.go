@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/AyJayTee/emotitron-go/components"
+	"github.com/AyJayTee/emotitron-go/database"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -38,8 +39,8 @@ func Start() {
 	s.AddHandler(messageCreate)
 
 	// Store database connection
-	components.StartDatabase()
-	defer components.ShutdownDatabase()
+	database.StartDatabase()
+	defer database.ShutdownDatabase()
 
 	// Open a connection
 	err = s.Open()
@@ -95,7 +96,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if m.Content == "ping" {
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
-		components.PingDatabase()
+		database.PingDatabase()
 	}
 
 	if m.Content == "pong" {
@@ -103,7 +104,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if m.Content == "createtable" {
-		components.CreateTable()
+		database.CreateTable()
 	}
 }
 
