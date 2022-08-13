@@ -33,7 +33,7 @@ func Start() {
 	s.Identify.Intents = discordgo.IntentGuildMessages
 
 	// Declare bot commands
-	commands = []string{"add", "remove"}
+	commands = []string{"add", "remove", "list"}
 
 	// Add handlers
 	s.AddHandler(messageCreate)
@@ -65,13 +65,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check for invoking proper command
 	for _, c := range commands {
 		if strings.HasPrefix(m.Content, commandPrefix+c) {
-			msg, err := invokeCommand(c, strings.Split(m.Content[len(c)+2:], " ")...)
+			err := invokeCommand(c, s, m)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 				return
-			}
-			if msg != "" {
-				s.ChannelMessageSend(m.ChannelID, msg)
 			}
 			return
 		}
@@ -79,7 +76,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Check for invoking custom command
 	if strings.HasPrefix(m.Content, commandPrefix) {
-		msg, err := components.GetCommand(strings.Split(m.Content[len(commandPrefix):], " "))
+		msg, err := components.GetCustomCommand(m)
 		if err != nil {
 			if err.Error() == "sql: no rows in result set" {
 				// Command does not exist so ignore this case
@@ -108,22 +105,32 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func invokeCommand(command string, args ...string) (string, error) {
+func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCreate) error {
 	switch command {
 	case "add":
-		msg, err := components.AddCommand(args)
+		msg, err := components.AddCustomCommand(commands, m)
 		if err != nil {
-			return "", err
+			return err
 		}
-		return msg, nil
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
 
 	case "remove":
-		msg, err := components.RemoveCommand(args)
+		msg, err := components.RemoveCustomCommand(m)
 		if err != nil {
-			return "", err
+			return err
 		}
-		return msg, nil
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
+
+	case "list":
+		embed, err := components.ListCustomCommands()
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSendEmbed(m.ChannelID, embed)
+		return nil
 	}
 
-	return "", nil
+	return nil
 }

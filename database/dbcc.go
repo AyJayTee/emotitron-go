@@ -65,6 +65,43 @@ func GetCustomCommandValue(commandName string) (string, error) {
 	return result, nil
 }
 
+// Gets all custom commands in the database
+func GetAllCustomCommandNames() ([]CustomCommand, error) {
+	query := `SELECT * FROM customcommands`
+
+	// Create a 5 second timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	// Prepare the statement
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("Error %s when preparing sql query", err)
+		return nil, err
+	}
+
+	// Scan the result to the variable
+	var result []CustomCommand
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		log.Printf("Error %s executing sql query", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var cc CustomCommand
+		if err := rows.Scan(&id, &cc.Name, &cc.Result); err != nil {
+			log.Printf("Error %s accessing row values", err)
+			return nil, err
+		}
+		result = append(result, cc)
+	}
+
+	return result, nil
+}
+
 // Removes a custom command from the database
 func RemoveCustomCommand(commandName string) error {
 	query := `DELETE FROM customcommands WHERE command_name = ?`
