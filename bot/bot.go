@@ -33,7 +33,10 @@ func Start() {
 	s.Identify.Intents = discordgo.IntentGuildMessages
 
 	// Declare bot commands
-	commands = []string{"add", "remove", "list"}
+	commands = []string{
+		"help",                  // general.go
+		"add", "remove", "list", // customcommands.go
+	}
 
 	// Add handlers
 	s.AddHandler(messageCreate)
@@ -107,6 +110,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCreate) error {
 	switch command {
+	case "help":
+		embed := components.Help()
+		s.ChannelMessageSendEmbed(m.ChannelID, embed)
+
 	case "add":
 		msg, err := components.AddCustomCommand(commands, m)
 		if err != nil {
