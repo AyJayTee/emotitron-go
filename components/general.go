@@ -30,5 +30,13 @@ func Help() *discordgo.MessageEmbed {
 	}
 	embed.Fields = append(embed.Fields, &listField)
 
+	// !christranslate
+	christTranslateField := discordgo.MessageEmbedField{
+		Name:   "!christranslate",
+		Value:  "Utilises the dyslexia engine to translate the previous message into 'Chris speak'",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &christTranslateField)
+
 	return &embed
 }

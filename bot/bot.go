@@ -36,6 +36,7 @@ func Start() {
 	commands = []string{
 		"help",                  // general.go
 		"add", "remove", "list", // customcommands.go
+		"christranslate", // memes.go
 	}
 
 	// Add handlers
@@ -136,6 +137,14 @@ func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCre
 			return err
 		}
 		s.ChannelMessageSendEmbed(m.ChannelID, embed)
+		return nil
+
+	case "christranslate":
+		msg, err := components.ChrisTranslate(s, m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
 		return nil
 	}
 

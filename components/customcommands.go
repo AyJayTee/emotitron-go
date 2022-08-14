@@ -97,7 +97,7 @@ func ListCustomCommands() (*discordgo.MessageEmbed, error) {
 	}
 
 	// Create the embed
-	embed := discordgo.MessageEmbed{Title: "Custom commands", Description: "All current custom commands"}
+	embed := discordgo.MessageEmbed{Title: "Custom commands", Description: ""}
 
 	// Add the fields to the embed
 	for _, c := range commands {
