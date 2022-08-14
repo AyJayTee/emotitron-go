@@ -30,21 +30,18 @@ func Start() {
 	}
 
 	// Declare bot intents
-	s.Identify.Intents = discordgo.IntentGuildMessages
+	s.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
 	// Declare bot commands
 	commands = []string{
 		"help",                  // general.go
-		"add", "remove", "list", // customcommands.go
-		"christranslate", // memes.go
+		"add", "remove", "list", // customcommands.go``
+		"christranslate",       // memes.go
+		"remindme", "forgetme", // reminders.go
 	}
 
 	// Add handlers
 	s.AddHandler(messageCreate)
-
-	// Store database connection
-	database.StartDatabase()
-	defer database.ShutdownDatabase()
 
 	// Open a connection
 	err = s.Open()
@@ -53,6 +50,15 @@ func Start() {
 		return
 	}
 	defer s.Close()
+
+	// Start database connection
+	database.StartDatabase()
+	defer database.ShutdownDatabase()
+
+	// Start the reminder workers
+	reminders := make(chan database.Reminder, 1)
+	go components.CheckReminders(reminders)
+	go components.SendReminders(s, reminders)
 
 	fmt.Println("Emotitron activated, press CTRL-C to stop.")
 	sc := make(chan os.Signal, 1)
@@ -103,10 +109,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == "pong" {
 		s.ChannelMessageSend(m.ChannelID, "Ping!")
 	}
-
-	if m.Content == "createtable" {
-		database.CreateTable()
-	}
 }
 
 func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCreate) error {
@@ -141,6 +143,22 @@ func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCre
 
 	case "christranslate":
 		msg, err := components.ChrisTranslate(s, m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
+
+	case "remindme":
+		msg, err := components.RemindMe(m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
+
+	case "forgetme":
+		msg, err := components.ForgetMe(m)
 		if err != nil {
 			return err
 		}

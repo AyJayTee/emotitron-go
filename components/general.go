@@ -38,5 +38,21 @@ func Help() *discordgo.MessageEmbed {
 	}
 	embed.Fields = append(embed.Fields, &christTranslateField)
 
+	// !remindme
+	remindMeField := discordgo.MessageEmbedField{
+		Name:   "!remindme [quantity] [minutes/hours/days/weeks/months] [text]",
+		Value:  "PMs you the specified text after the specified time has elapsed",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &remindMeField)
+
+	// !forgetme
+	forgetMeField := discordgo.MessageEmbedField{
+		Name:   "!forgetme",
+		Value:  "Removes all of your current reminders",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &forgetMeField)
+
 	return &embed
 }
