@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -35,9 +36,10 @@ func Start() {
 	// Declare bot commands
 	commands = []string{
 		"help",                  // general.go
-		"add", "remove", "list", // customcommands.go``
+		"add", "remove", "list", // customcommands.go
 		"christranslate",       // memes.go
 		"remindme", "forgetme", // reminders.go
+		"addresponse", "removeresponse", "modifytrigger", "modifyresponse", "listresponses", // responses.go
 	}
 
 	// Add handlers
@@ -67,47 +69,57 @@ func Start() {
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	words := strings.Split(m.Content, " ")
+
 	// Ignore messages from the bot
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	// Check for invoking proper command
-	for _, c := range commands {
-		if strings.HasPrefix(m.Content, commandPrefix+c) {
-			err := invokeCommand(c, s, m)
+	// Check for invoking command
+	if strings.HasPrefix(m.Content, commandPrefix) {
+		// Check for proper command
+		for _, c := range commands {
+			if words[0] == commandPrefix+c {
+				err := invokeCommand(c, s, m)
+				if err != nil {
+					s.ChannelMessageSend(m.ChannelID, err.Error())
+					return
+				}
+				return
+			}
+		}
+
+		// Check for custom command
+		if len(words) == 1 {
+			msg, err := components.GetCustomCommand(m)
 			if err != nil {
+				if err.Error() == "sql: no rows in result set" {
+					// Command does not exist so ignore this case
+					return
+				}
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 				return
 			}
+			if msg != "" {
+				s.ChannelMessageSend(m.ChannelID, msg)
+			}
 			return
 		}
 	}
 
-	// Check for invoking custom command
-	if strings.HasPrefix(m.Content, commandPrefix) {
-		msg, err := components.GetCustomCommand(m)
-		if err != nil {
-			if err.Error() == "sql: no rows in result set" {
-				// Command does not exist so ignore this case
+	// Check for response trigger
+	for _, w := range words {
+		if components.CheckForResponseTrigger(w) {
+			response, err := components.GetResponseValue(w)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, err.Error())
+				log.Println(err.Error())
 				return
 			}
-			s.ChannelMessageSend(m.ChannelID, err.Error())
+			s.ChannelMessageSend(m.ChannelID, response.Response)
 			return
 		}
-		if msg != "" {
-			s.ChannelMessageSend(m.ChannelID, msg)
-		}
-		return
-	}
-
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
-		database.PingDatabase()
-	}
-
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
 	}
 }
 
@@ -164,6 +176,44 @@ func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCre
 		}
 		s.ChannelMessageSend(m.ChannelID, msg)
 		return nil
+
+	case "addresponse":
+		msg, err := components.AddResponse(m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
+
+	case "removeresponse":
+		msg, err := components.RemoveResponse(m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
+
+	case "modifytrigger":
+		msg, err := components.ModifyTrigger(m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
+		return nil
+
+	case "modifyresponse":
+		msg, err := components.MofifyResponse(m)
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSend(m.ChannelID, msg)
+
+	case "listresponses":
+		msg, err := components.ListResponses()
+		if err != nil {
+			return err
+		}
+		s.ChannelMessageSendEmbed(m.ChannelID, msg)
 	}
 
 	return nil

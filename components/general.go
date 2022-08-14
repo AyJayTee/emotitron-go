@@ -54,5 +54,45 @@ func Help() *discordgo.MessageEmbed {
 	}
 	embed.Fields = append(embed.Fields, &forgetMeField)
 
+	// !addresponse
+	addResponseField := discordgo.MessageEmbedField{
+		Name:   "!addresponse [trigger] [response]",
+		Value:  "Adds a response to the bot so that when a user writes sends the trigger, the bot responds with the response",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &addResponseField)
+
+	// !removeresponse
+	removeResponseField := discordgo.MessageEmbedField{
+		Name:   "!removeresponse [trigger]",
+		Value:  "Removes the specified response",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &removeResponseField)
+
+	// !modifytrigger
+	modifyTriggerField := discordgo.MessageEmbedField{
+		Name:   "!modifytrigger [trigger to modify] [new trigger]",
+		Value:  "Renames the trigger portion of a response",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &modifyTriggerField)
+
+	// !modifyrepsonse
+	modifyResponseField := discordgo.MessageEmbedField{
+		Name:   "!modifyresponse [trigger] [new response]",
+		Value:  "Modifies the response portion of a response",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &modifyResponseField)
+
+	// !listresponses
+	listResponsesField := discordgo.MessageEmbedField{
+		Name:   "!listresponses",
+		Value:  "Lists all currently stored responses",
+		Inline: false,
+	}
+	embed.Fields = append(embed.Fields, &listResponsesField)
+
 	return &embed
 }

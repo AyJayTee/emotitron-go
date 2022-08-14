@@ -21,8 +21,9 @@ func StartDatabase() {
 	db = dbconn
 
 	// Initialize all the requried tables
-	CreateCustomCommandsTable()
-	CreateRemindersTable()
+	createCustomCommandsTable()
+	createRemindersTable()
+	createResponsesTable()
 }
 
 // Cleanly closes the db connection
@@ -42,21 +43,28 @@ func PingDatabase() {
 }
 
 // Creates the customcommands table
-func CreateCustomCommandsTable() {
+func createCustomCommandsTable() {
 	query := `CREATE TABLE IF NOT EXISTS customcommands(command_id int primary key auto_increment, command_name text, command_result text)`
 
-	CreateTable(query)
+	createTable(query)
 }
 
 // Creates the reminders table
-func CreateRemindersTable() {
+func createRemindersTable() {
 	query := `CREATE TABLE IF NOT EXISTS reminders(reminder_id int primary key auto_increment, user_id text, future int, reminder_text text, completed boolean)`
 
-	CreateTable(query)
+	createTable(query)
+}
+
+// Creates the responses table
+func createResponsesTable() {
+	query := `CREATE TABLE IF NOT EXISTS responses(response_id int primary key auto_increment, response_trigger text, response_value text)`
+
+	createTable(query)
 }
 
 // Creates a table from a query
-func CreateTable(query string) error {
+func createTable(query string) error {
 	// Create 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
