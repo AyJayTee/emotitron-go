@@ -8,6 +8,8 @@ services:
     environment:
       - MYSQL_DATABASE=emotitron_db
       - MYSQL_ROOT_PASSWORD=password
+    volumes:
+      - db_data:/var/lib/mysql
 
   app:
     build: .
@@ -17,3 +19,6 @@ services:
       - BOT_PREFIX=!
     ports:
       - 8080:8080
+
+volumes:
+  db_data:
