@@ -13,7 +13,9 @@ type CustomCommand struct {
 
 // Inserts a custom command into the database
 func InsertCustomCommand(command CustomCommand) error {
-	query := `INSERT INTO customcommands (command_name, command_result) VALUES (?, ?)`
+	// Build the query
+	query := `INSERT INTO customcommands (command_name, command_result) VALUES (`
+	query += "'" + command.Name + "', '" + command.Result + "')"
 
 	// Create 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -28,7 +30,7 @@ func InsertCustomCommand(command CustomCommand) error {
 	defer stmt.Close()
 
 	// Execute the statement
-	_, err = stmt.ExecContext(ctx, command.Name, command.Result)
+	_, err = stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
@@ -39,7 +41,8 @@ func InsertCustomCommand(command CustomCommand) error {
 
 // Get the value of a custom command
 func GetCustomCommandValue(commandName string) (string, error) {
-	query := `SELECT command_result FROM customcommands WHERE command_name = ?`
+	query := `SELECT command_result FROM customcommands WHERE command_name = `
+	query += "'" + commandName + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -55,7 +58,7 @@ func GetCustomCommandValue(commandName string) (string, error) {
 
 	// Scan the result to a variable
 	var result string
-	row := stmt.QueryRowContext(ctx, commandName)
+	row := stmt.QueryRowContext(ctx)
 	if err := row.Scan(&result); err != nil {
 		return "", err
 	}
@@ -104,7 +107,9 @@ func GetAllCustomCommandNames() ([]CustomCommand, error) {
 
 // Removes a custom command from the database
 func RemoveCustomCommand(commandName string) error {
-	query := `DELETE FROM customcommands WHERE command_name = ?`
+	// Build the query
+	query := `DELETE FROM customcommands WHERE command_name = `
+	query += "'" + commandName + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -119,7 +124,7 @@ func RemoveCustomCommand(commandName string) error {
 	defer stmt.Close()
 
 	// Execute the query
-	_, err = stmt.ExecContext(ctx, commandName)
+	_, err = stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing the sql query", err)
 		return err

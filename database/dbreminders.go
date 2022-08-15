@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -16,7 +17,9 @@ type Reminder struct {
 
 // Inserts a reminder into the database
 func InsertReminder(reminder Reminder) error {
-	query := `INSERT INTO reminders (user_id, future, reminder_text, completed) VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO reminders (user_id, future, reminder_text, completed) VALUES (`
+	query += ("'" + reminder.UserID + "', " + strconv.Itoa(reminder.Future) + ", '" + reminder.Text + "', " + strconv.FormatBool(reminder.Completed))
+	query += ")"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -31,7 +34,7 @@ func InsertReminder(reminder Reminder) error {
 	defer stmt.Close()
 
 	// Execute the statement
-	_, err = stmt.ExecContext(ctx, reminder.UserID, reminder.Future, reminder.Text, reminder.Completed)
+	_, err = stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
@@ -42,7 +45,9 @@ func InsertReminder(reminder Reminder) error {
 
 // Removes all reminders belonging to the passed user id
 func RemoveReminders(userId string) error {
-	query := `DELETE FROM reminders WHERE user_id = ?`
+	// Build the query
+	query := `DELETE FROM reminders WHERE user_id = `
+	query += "'" + userId + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -57,7 +62,7 @@ func RemoveReminders(userId string) error {
 	defer stmt.Close()
 
 	// Execute the statement
-	res, err := stmt.ExecContext(ctx, userId)
+	res, err := stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
@@ -76,7 +81,9 @@ func RemoveReminders(userId string) error {
 
 // Removes a single reminder from the database
 func RemoveRemdinder(id int) error {
-	query := `DELETE FROM reminders WHERE reminder_id = ?`
+	// Build hte query
+	query := `DELETE FROM reminders WHERE reminder_id = `
+	query += strconv.Itoa(id)
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -90,7 +97,7 @@ func RemoveRemdinder(id int) error {
 	}
 
 	// Execute the statement
-	res, err := stmt.ExecContext(ctx, id)
+	res, err := stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
@@ -109,7 +116,9 @@ func RemoveRemdinder(id int) error {
 
 // Gets all expired reminders
 func GetExpiredReminders(currentTime int64) ([]Reminder, error) {
-	query := `SELECT reminder_id, user_id, future, reminder_text FROM reminders WHERE future <= ?`
+	// Build the query
+	query := `SELECT reminder_id, user_id, future, reminder_text FROM reminders WHERE future <= `
+	query += strconv.Itoa(int(currentTime))
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -125,7 +134,7 @@ func GetExpiredReminders(currentTime int64) ([]Reminder, error) {
 
 	// Scan the result to a variable
 	var result []Reminder
-	rows, err := stmt.QueryContext(ctx, currentTime)
+	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		log.Printf("Error %s executing sql query", err)
 		return nil, err

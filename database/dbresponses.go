@@ -13,7 +13,9 @@ type Response struct {
 
 // Inserts a response to the database
 func InsertResponse(response Response) error {
-	query := `INSERT INTO responses (response_trigger, response_value) VALUES (?, ?)`
+	// Build the query
+	query := `INSERT INTO responses (response_trigger, response_value) VALUES (`
+	query += "'" + response.Trigger + "', '" + response.Response + "')"
 
 	// Create 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -28,7 +30,7 @@ func InsertResponse(response Response) error {
 	defer stmt.Close()
 
 	// Execute the statement
-	_, err = stmt.ExecContext(ctx, response.Trigger, response.Response)
+	_, err = stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing sql query", err)
 		return err
@@ -39,7 +41,9 @@ func InsertResponse(response Response) error {
 
 // Removes a response from the database
 func RemoveResponse(responseTrigger string) error {
-	query := `DELETE FROM responses WHERE response_trigger = ?`
+	// Build the query
+	query := `DELETE FROM responses WHERE response_trigger = `
+	query += "'" + responseTrigger + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -54,7 +58,7 @@ func RemoveResponse(responseTrigger string) error {
 	defer stmt.Close()
 
 	// Execute the query
-	_, err = stmt.ExecContext(ctx, responseTrigger)
+	_, err = stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing the sql query", err)
 		return err
@@ -66,7 +70,11 @@ func RemoveResponse(responseTrigger string) error {
 
 // Updates the trigger of a repsonse
 func UpdateResponseTrigger(oldTrigger string, newTrigger string) error {
-	query := `UPDATE responses SET response_trigger = ? WHERE response_trigger = ?`
+	// Build the query
+	query := `UPDATE responses SET response_trigger = `
+	query += "'" + newTrigger + "'"
+	query += " WHERE response_trigger = "
+	query += "'" + oldTrigger + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -81,7 +89,7 @@ func UpdateResponseTrigger(oldTrigger string, newTrigger string) error {
 	defer stmt.Close()
 
 	// Execute the query
-	res, err := stmt.ExecContext(ctx, newTrigger, oldTrigger)
+	res, err := stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing the sql query", err)
 		return err
@@ -101,7 +109,11 @@ func UpdateResponseTrigger(oldTrigger string, newTrigger string) error {
 
 // Update the response of a response
 func UpdateResponseResponse(trigger string, newRepsonse string) error {
-	query := `UPDATE responses SET response_value = ? WHERE response_trigger = ?`
+	// Build the query
+	query := `UPDATE responses SET response_value = `
+	query += "'" + newRepsonse + "'"
+	query += " WHERE response_trigger = "
+	query += "'" + trigger + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -116,7 +128,7 @@ func UpdateResponseResponse(trigger string, newRepsonse string) error {
 	defer stmt.Close()
 
 	// Execute the query
-	res, err := stmt.ExecContext(ctx, newRepsonse, trigger)
+	res, err := stmt.ExecContext(ctx)
 	if err != nil {
 		log.Printf("Error %s when executing the sql query", err)
 		return err
@@ -136,7 +148,9 @@ func UpdateResponseResponse(trigger string, newRepsonse string) error {
 
 // Gets a reponse object based on a trigger
 func GetResponse(trigger string) (Response, error) {
-	query := `SELECT response_trigger, response_value FROM responses WHERE response_trigger = ?`
+	// Build the query
+	query := `SELECT response_trigger, response_value FROM responses WHERE response_trigger = `
+	query += "'" + trigger + "'"
 
 	// Create a 5 second timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -152,7 +166,7 @@ func GetResponse(trigger string) (Response, error) {
 
 	// Scan the result to a variable
 	var result Response
-	row := stmt.QueryRowContext(ctx, trigger)
+	row := stmt.QueryRowContext(ctx)
 	if err := row.Scan(&result.Trigger, &result.Response); err != nil {
 		return Response{}, err
 	}

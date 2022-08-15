@@ -7,14 +7,16 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
 
 // Initializes the db conection
 func StartDatabase() {
-	dbconn, err := sql.Open("mysql", "root:password@tcp(db:3306)/emotitron_db")
+	connstring := "postgres://root:password@db:5432/emotitron_db?sslmode=disable"
+
+	dbconn, err := sql.Open("postgres", connstring)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,21 +46,21 @@ func PingDatabase() {
 
 // Creates the customcommands table
 func createCustomCommandsTable() {
-	query := `CREATE TABLE IF NOT EXISTS customcommands(command_id int primary key auto_increment, command_name text, command_result text)`
+	query := `CREATE TABLE IF NOT EXISTS customcommands(command_id SERIAL PRIMARY KEY, command_name TEXT, command_result TEXT)`
 
 	createTable(query)
 }
 
 // Creates the reminders table
 func createRemindersTable() {
-	query := `CREATE TABLE IF NOT EXISTS reminders(reminder_id int primary key auto_increment, user_id text, future int, reminder_text text, completed boolean)`
+	query := `CREATE TABLE IF NOT EXISTS reminders(reminder_id SERIAL PRIMARY KEY, user_id TEXT, future BIGINT, reminder_text TEXT, completed BOOLEAN)`
 
 	createTable(query)
 }
 
 // Creates the responses table
 func createResponsesTable() {
-	query := `CREATE TABLE IF NOT EXISTS responses(response_id int primary key auto_increment, response_trigger text, response_value text)`
+	query := `CREATE TABLE IF NOT EXISTS responses(response_id SERIAL PRIMARY KEY, response_trigger TEXT, response_value TEXT)`
 
 	createTable(query)
 }

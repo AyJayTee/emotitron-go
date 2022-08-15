@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/bwmarrin/discordgo v0.25.0
-	github.com/go-sql-driver/mysql v1.6.0
+	github.com/lib/pq v1.10.6
 )
 
 require (
