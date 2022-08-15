@@ -12,14 +12,14 @@ import (
 func AddResponse(m *discordgo.MessageCreate) (string, error) {
 	args := strings.Split(m.Content[13:], " ")
 	// Check args are of correct format
-	if len(args) != 2 {
+	if len(args) < 2 {
 		return "", errors.New("correct usage is !addresponse [trigger] [response]")
 	}
 
 	// Build the response
 	response := database.Response{
 		Trigger:  args[0],
-		Response: args[1],
+		Response: strings.Join(args[1:], " "),
 	}
 
 	// Commit to the database
