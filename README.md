@@ -1,2 +1,2 @@
 # emotitron-go
-Emoteslave discord bot rewritten in golang
+A general purpose discord bot written in Go.
