@@ -2,6 +2,8 @@ package components
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/AyJayTee/emotitron-go/database"
@@ -34,6 +36,12 @@ func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (str
 		if c == args[0] {
 			return "", errors.New("cannot add a command that already exists")
 		}
+	}
+
+	// Check that command does not already exist
+	_, err := database.GetCustomCommandValue(args[0])
+	if err == nil {
+		return "", errors.New("cannot add a command that already exists")
 	}
 
 	// Add the command to the database
@@ -89,15 +97,51 @@ func GetCustomCommand(m *discordgo.MessageCreate) (string, error) {
 }
 
 // Returns a list of all stored custom commands
-func ListCustomCommands() (*discordgo.MessageEmbed, error) {
+func ListCustomCommands(m *discordgo.MessageCreate) (*discordgo.MessageEmbed, error) {
+	args := strings.Split(m.Content, " ")
+	var pageNumber int
+
+	// Verify that args are of correct format
+	if len(args)-1 > 1 {
+		return nil, errors.New("correct usage is !list <page number>")
+	}
+
 	// Get all commands from the database
 	commands, err := database.GetAllCustomCommandNames()
 	if err != nil {
 		return nil, err
 	}
 
+	// Calculate how many pages there are
+	pages := int(float64(len(commands) / 10))
+	if len(commands)%10 != 0 {
+		pages += 1 // We rounded down so need to add 1
+	}
+
+	// If no page argument is given, set to 1
+	if len(args) == 1 {
+		pageNumber = 1
+	} else {
+		pageNumber, err = strconv.Atoi(args[1])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Avoid out of range errors
+	if pageNumber > pages {
+		return nil, fmt.Errorf("there are only %d pages of commands", pages)
+	}
+
+	// Populate the selected page
+	if pageNumber < pages {
+		commands = commands[(pageNumber-1)*10 : (pageNumber * 10)]
+	} else {
+		commands = commands[(pageNumber-1)*10:]
+	}
+
 	// Create the embed
-	embed := discordgo.MessageEmbed{Title: "Custom commands", Description: ""}
+	embed := discordgo.MessageEmbed{Title: "Custom commands", Description: fmt.Sprintf("Page %d of %d", pageNumber, pages)}
 
 	// Add the fields to the embed
 	for _, c := range commands {

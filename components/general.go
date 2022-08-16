@@ -24,7 +24,7 @@ func Help() *discordgo.MessageEmbed {
 
 	// !list
 	listField := discordgo.MessageEmbedField{
-		Name:   "!list",
+		Name:   "!list <page number>",
 		Value:  "Lists all custom commands currently stored in the database.",
 		Inline: false,
 	}

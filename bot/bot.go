@@ -146,7 +146,7 @@ func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCre
 		return nil
 
 	case "list":
-		embed, err := components.ListCustomCommands()
+		embed, err := components.ListCustomCommands(m)
 		if err != nil {
 			return err
 		}
