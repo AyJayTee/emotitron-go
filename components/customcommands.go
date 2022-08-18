@@ -13,7 +13,7 @@ import (
 // Adds a custom command to the database
 func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (string, error) {
 	hasAttachment := false
-	args := strings.Split(m.Content[5:], " ")
+	args := strings.Split(m.Content, " ")
 
 	// Check for attachments
 	if len(m.Attachments) != 0 {
@@ -22,36 +22,36 @@ func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (str
 
 	// Verify that the args are of correct format
 	if hasAttachment {
-		if len(args) != 1 {
+		if len(args) != 2 {
 			return "", errors.New("correct usage is !add [command name] [command value], or !add [command name] with an attachment")
 		}
 	} else {
-		if len(args) != 2 {
+		if len(args) != 3 {
 			return "", errors.New("correct usage is !add [command name] [command value], or !add [command name] with an attachment")
 		}
 	}
 
 	// Stop user from adding commands named the same as proper commands
 	for _, c := range currentCommands {
-		if c == args[0] {
+		if c == args[1] {
 			return "", errors.New("cannot add a command that already exists")
 		}
 	}
 
 	// Check that command does not already exist
-	_, err := database.GetCustomCommandValue(args[0])
+	_, err := database.GetCustomCommandValue(args[1])
 	if err == nil {
 		return "", errors.New("cannot add a command that already exists")
 	}
 
 	// Add the command to the database
 	if hasAttachment {
-		err := database.InsertCustomCommand(database.CustomCommand{Name: args[0], Result: m.Attachments[0].URL})
+		err := database.InsertCustomCommand(database.CustomCommand{Name: args[1], Result: m.Attachments[0].URL})
 		if err != nil {
 			return "", err
 		}
 	} else {
-		err := database.InsertCustomCommand(database.CustomCommand{Name: args[0], Result: args[1]})
+		err := database.InsertCustomCommand(database.CustomCommand{Name: args[1], Result: args[2]})
 		if err != nil {
 			return "", err
 		}
@@ -62,15 +62,15 @@ func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (str
 
 // Removes a custom command from the database
 func RemoveCustomCommand(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[8:], " ")
+	args := strings.Split(m.Content, " ")
 
 	// Verify that the args are of correct format
-	if len(args) != 1 {
+	if len(args) != 2 {
 		return "", errors.New("correct usage is !remove [command name]")
 	}
 
 	// Remove the command from the database
-	err := database.RemoveCustomCommand(args[0])
+	err := database.RemoveCustomCommand(args[1])
 	if err != nil {
 		return "", err
 	}
@@ -80,15 +80,15 @@ func RemoveCustomCommand(m *discordgo.MessageCreate) (string, error) {
 
 // Fetches the value of a custom command from the database
 func GetCustomCommand(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[1:], " ")
+	args := strings.Split(m.Content, " ")
 
 	// Verify that the args are of correct format
-	if len(args) != 1 {
+	if len(args) != 2 {
 		return "", errors.New("wrong number of arguments")
 	}
 
 	// Fetch the command from the database
-	result, err := database.GetCustomCommandValue(args[0])
+	result, err := database.GetCustomCommandValue(args[1])
 	if err != nil {
 		return "", err
 	}

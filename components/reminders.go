@@ -23,20 +23,20 @@ var (
 
 // Creates a reminder
 func RemindMe(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[10:], " ")
+	args := strings.Split(m.Content, " ")
 
 	// Check args are of the correct format
-	if len(args) < 3 {
+	if len(args) < 4 {
 		return "", errors.New("correct usage is !remindme [quantity] [minutes/hours/days/weeks/months] [text]")
 	}
 
 	// Compute the future time
 	var future int
-	quantity, err := strconv.ParseInt(args[0], 0, 32)
+	quantity, err := strconv.ParseInt(args[1], 0, 32)
 	if err != nil {
 		return "", err
 	}
-	unit := strings.TrimSuffix(args[1], "s") // Trim the s from the unit definition
+	unit := strings.TrimSuffix(args[2], "s") // Trim the s from the unit definition
 	if val, ok := units[unit]; ok {
 		future = int(time.Now().Unix()) + (int(quantity) * val)
 	} else {
@@ -44,7 +44,7 @@ func RemindMe(m *discordgo.MessageCreate) (string, error) {
 	}
 
 	// Build the message string from remaining args
-	text := strings.Join(args[2:], " ")
+	text := strings.Join(args[3:], " ")
 
 	// Build the reminder
 	reminder := database.Reminder{

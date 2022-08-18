@@ -10,16 +10,16 @@ import (
 
 // Adds a new response to the database
 func AddResponse(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[13:], " ")
+	args := strings.Split(m.Content, " ")
 	// Check args are of correct format
-	if len(args) < 2 {
+	if len(args) < 3 {
 		return "", errors.New("correct usage is !addresponse [trigger] [response]")
 	}
 
 	// Build the response
 	response := database.Response{
-		Trigger:  args[0],
-		Response: strings.Join(args[1:], " "),
+		Trigger:  args[1],
+		Response: strings.Join(args[2:], " "),
 	}
 
 	// Commit to the database
@@ -33,14 +33,14 @@ func AddResponse(m *discordgo.MessageCreate) (string, error) {
 
 // Removes a response from the database
 func RemoveResponse(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[16:], " ")
+	args := strings.Split(m.Content, " ")
 	// Check args are of correct format
-	if len(args) != 1 {
+	if len(args) != 2 {
 		return "", errors.New("correct usage is !removeresponse [trigger]")
 	}
 
 	// Remove from the database
-	err := database.RemoveResponse(args[0])
+	err := database.RemoveResponse(args[1])
 	if err != nil {
 		return "", err
 	}
@@ -50,14 +50,14 @@ func RemoveResponse(m *discordgo.MessageCreate) (string, error) {
 
 // Modifies the trigger of a response in the database
 func ModifyTrigger(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[15:], " ")
+	args := strings.Split(m.Content, " ")
 	// Check args are of correct format
-	if len(args) != 2 {
+	if len(args) != 3 {
 		return "", errors.New("correct usage is !modifytrigger [trigger to modify] [new trigger]")
 	}
 
 	// Update the database
-	err := database.UpdateResponseTrigger(args[0], args[1])
+	err := database.UpdateResponseTrigger(args[1], args[2])
 	if err != nil {
 		return "", err
 	}
@@ -67,14 +67,14 @@ func ModifyTrigger(m *discordgo.MessageCreate) (string, error) {
 
 // Modifies the response of a response in the database
 func MofifyResponse(m *discordgo.MessageCreate) (string, error) {
-	args := strings.Split(m.Content[16:], " ")
+	args := strings.Split(m.Content, " ")
 	// Check args are of correct format
-	if len(args) != 2 {
+	if len(args) < 3 {
 		return "", errors.New("correct usage is !modifyresponse [trigger] [new response]")
 	}
 
 	// Update the database
-	err := database.UpdateResponseResponse(args[0], args[1])
+	err := database.UpdateResponseResponse(args[1], strings.Join(args[2:], " "))
 	if err != nil {
 		return "", err
 	}
