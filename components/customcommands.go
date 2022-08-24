@@ -83,12 +83,12 @@ func GetCustomCommand(m *discordgo.MessageCreate) (string, error) {
 	args := strings.Split(m.Content, " ")
 
 	// Verify that the args are of correct format
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return "", errors.New("wrong number of arguments")
 	}
 
 	// Fetch the command from the database
-	result, err := database.GetCustomCommandValue(args[1])
+	result, err := database.GetCustomCommandValue(args[0])
 	if err != nil {
 		return "", err
 	}
