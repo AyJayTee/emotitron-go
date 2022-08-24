@@ -2,6 +2,13 @@ package components
 
 import "github.com/bwmarrin/discordgo"
 
+// Returns a map of commands provided by the general component
+func General() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
+		"help": Help,
+	}
+}
+
 func Help() *discordgo.MessageEmbed {
 	// Create the embed
 	embed := discordgo.MessageEmbed{Title: "Commands available", Description: ""}

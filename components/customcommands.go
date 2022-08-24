@@ -10,8 +10,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Returns a map of commands provided by the custom commands component
+func CustomCommands() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
+		"add":    AddCustomCommand,
+		"remove": RemoveCustomCommand,
+		"list":   ListCustomCommands,
+	}
+}
+
 // Adds a custom command to the database
-func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (string, error) {
+func AddCustomCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	hasAttachment := false
 	args := strings.Split(m.Content, " ")
 
@@ -28,13 +37,6 @@ func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (str
 	} else {
 		if len(args) != 3 {
 			return "", errors.New("correct usage is !add [command name] [command value], or !add [command name] with an attachment")
-		}
-	}
-
-	// Stop user from adding commands named the same as proper commands
-	for _, c := range currentCommands {
-		if c == args[1] {
-			return "", errors.New("cannot add a command that already exists")
 		}
 	}
 
@@ -61,7 +63,7 @@ func AddCustomCommand(currentCommands []string, m *discordgo.MessageCreate) (str
 }
 
 // Removes a custom command from the database
-func RemoveCustomCommand(m *discordgo.MessageCreate) (string, error) {
+func RemoveCustomCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.Split(m.Content, " ")
 
 	// Verify that the args are of correct format
@@ -97,7 +99,7 @@ func GetCustomCommand(m *discordgo.MessageCreate) (string, error) {
 }
 
 // Returns a list of all stored custom commands
-func ListCustomCommands(m *discordgo.MessageCreate) (*discordgo.MessageEmbed, error) {
+func ListCustomCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.Split(m.Content, " ")
 	var pageNumber int
 

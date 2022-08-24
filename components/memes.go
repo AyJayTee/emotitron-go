@@ -7,6 +7,13 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Returns a map of commands provided by the memes component
+func Memes() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
+		"christranslate": ChrisTranslate,
+	}
+}
+
 // Randomly mixes up letters in the previous message and then posts the result
 func ChrisTranslate(s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
 	// Fetch the previous message

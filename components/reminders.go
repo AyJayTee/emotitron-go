@@ -21,6 +21,14 @@ var (
 	}
 )
 
+// Returns a map of commands provided by the reminders component
+func Reminders() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
+		"remindme": RemindMe,
+		"forgetme": ForgetMe,
+	}
+}
+
 // Creates a reminder
 func RemindMe(m *discordgo.MessageCreate) (string, error) {
 	args := strings.Split(m.Content, " ")

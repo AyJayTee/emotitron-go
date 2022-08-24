@@ -8,6 +8,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Returns a map of commands provided by the responses component
+func Responses() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
+		"addresponse":    AddResponse,
+		"removeresponse": RemoveCustomCommand,
+		"modifytrigger":  ModifyTrigger,
+		"modifyresponse": ModifyResponse,
+		"listresponses":  ListResponses,
+	}
+}
+
 // Adds a new response to the database
 func AddResponse(m *discordgo.MessageCreate) (string, error) {
 	args := strings.Split(m.Content, " ")
@@ -66,7 +77,7 @@ func ModifyTrigger(m *discordgo.MessageCreate) (string, error) {
 }
 
 // Modifies the response of a response in the database
-func MofifyResponse(m *discordgo.MessageCreate) (string, error) {
+func ModifyResponse(m *discordgo.MessageCreate) (string, error) {
 	args := strings.Split(m.Content, " ")
 	// Check args are of correct format
 	if len(args) < 3 {
