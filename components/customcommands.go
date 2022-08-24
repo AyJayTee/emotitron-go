@@ -88,7 +88,7 @@ func GetCustomCommand(m *discordgo.MessageCreate) (string, error) {
 	}
 
 	// Fetch the command from the database
-	result, err := database.GetCustomCommandValue(args[0])
+	result, err := database.GetCustomCommandValue(args[0][1:])
 	if err != nil {
 		return "", err
 	}
