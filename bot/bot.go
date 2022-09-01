@@ -96,33 +96,48 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Check for invoking command
 	if strings.HasPrefix(m.Content, config.Prefix) {
-		// Extract the command name
-		command := strings.Split(m.Content[1:], " ")[0]
-
-		// Check for proper command
-		if ok := invokeCommand(command, s, m); ok {
-			return
-		}
-
-		// Check for custom command
-		if len(words) == 1 {
-			msg, err := components.GetCustomCommand(m)
-			if err != nil {
-				if err.Error() == "sql: no rows in result set" {
-					// Command does not exist so ignore this case
-					return
-				}
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-				return
-			}
-			if msg != "" {
-				s.ChannelMessageSend(m.ChannelID, msg)
-			}
-			return
-		}
+		checkForCommand(words, s, m)
 	}
 
 	// Check for response trigger
+	checkForResponse(words, s, m)
+}
+
+func checkForCommand(words []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Guard clause for not beginning with prefix
+	if !strings.HasPrefix(words[0], config.Prefix) {
+		return
+	}
+
+	// Extract the command name
+	command := words[0][1:]
+
+	// Check for proper command
+	if ok := invokeCommand(command, s, m); ok {
+		return
+	}
+
+	// Ignore if more than one word is in the message
+	if len(words) > 1 {
+		return
+	}
+
+	// Check for custom command
+	msg, err := components.GetCustomCommand(m)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			// Command does not exist so ignore this case
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+	if msg != "" {
+		s.ChannelMessageSend(m.ChannelID, msg)
+	}
+}
+
+func checkForResponse(words []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	for _, w := range words {
 		if components.CheckForResponseTrigger(w) {
 			response, err := components.GetResponseValue(w)
