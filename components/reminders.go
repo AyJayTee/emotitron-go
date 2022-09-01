@@ -1,7 +1,6 @@
 package components
 
 import (
-	"errors"
 	"log"
 	"strconv"
 	"strings"
@@ -24,31 +23,36 @@ var (
 // Returns a map of commands provided by the reminders component
 func Reminders() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
 	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
-		"remindme": RemindMe,
-		"forgetme": ForgetMe,
+		"remindme": remindMe,
+		"forgetme": forgetMe,
 	}
 }
 
 // Creates a reminder
-func RemindMe(m *discordgo.MessageCreate) (string, error) {
+func remindMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.Split(m.Content, " ")
 
 	// Check args are of the correct format
 	if len(args) < 4 {
-		return "", errors.New("correct usage is !remindme [quantity] [minutes/hours/days/weeks/months] [text]")
+		s.ChannelMessageSend(m.ChannelID, "Correct usage is !remindme [quantity] [minutes/hours/days/weeks/months] [text]")
+		return
 	}
 
 	// Compute the future time
 	var future int
 	quantity, err := strconv.ParseInt(args[1], 0, 32)
 	if err != nil {
-		return "", err
+		log.Printf("Error %s when computing future time", err)
+		s.ChannelMessageSend(m.ChannelID, err.Error())
+		return
 	}
 	unit := strings.TrimSuffix(args[2], "s") // Trim the s from the unit definition
 	if val, ok := units[unit]; ok {
 		future = int(time.Now().Unix()) + (int(quantity) * val)
 	} else {
-		return "", errors.New("unit not recognised, use one of minutes/hours/days/weeks/months")
+		log.Println("Error when computing future time")
+		s.ChannelMessageSend(m.ChannelID, "Unit not recognised, use one of minutes/hours/days/weeks/months")
+		return
 	}
 
 	// Build the message string from remaining args
@@ -65,20 +69,24 @@ func RemindMe(m *discordgo.MessageCreate) (string, error) {
 	// Commit reminder to the database
 	err = database.InsertReminder(reminder)
 	if err != nil {
-		return "", err
+		log.Printf("Error %s when committing reminder to database", err)
+		s.ChannelMessageSend(m.ChannelID, "Error adding reminder to database")
+		return
 	}
 
-	return "Reminder created!", nil
+	s.ChannelMessageSend(m.ChannelID, "Reminder successfully created!")
 }
 
 // Deletes all reminders
-func ForgetMe(m *discordgo.MessageCreate) (string, error) {
+func forgetMe(s *discordgo.Session, m *discordgo.MessageCreate) {
 	err := database.RemoveReminders(m.Author.ID)
 	if err != nil {
-		return "", err
+		log.Printf("Error %s when removing reminder", err)
+		s.ChannelMessageSend(m.ChannelID, "Error when removing reminder")
+		return
 	}
 
-	return "All of your reminders have been deleted.", nil
+	s.ChannelMessageSend(m.ChannelID, "All of your reminders have been deleted!")
 }
 
 // Worker to check for due reminders

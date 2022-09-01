@@ -1,6 +1,7 @@
 package components
 
 import (
+	"log"
 	"math/rand"
 	"strings"
 
@@ -10,16 +11,18 @@ import (
 // Returns a map of commands provided by the memes component
 func Memes() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
 	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
-		"christranslate": ChrisTranslate,
+		"christranslate": chrisTranslate,
 	}
 }
 
 // Randomly mixes up letters in the previous message and then posts the result
-func ChrisTranslate(s *discordgo.Session, m *discordgo.MessageCreate) (string, error) {
+func chrisTranslate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Fetch the previous message
 	history, err := s.ChannelMessages(m.ChannelID, 1, m.ID, "", "")
 	if err != nil {
-		return "", err
+		log.Printf("Error %s when fetching message history", err)
+		s.ChannelMessageSend(m.ChannelID, err.Error())
+		return
 	}
 
 	// Separate the message and randomly reorder letters
@@ -50,5 +53,5 @@ func ChrisTranslate(s *discordgo.Session, m *discordgo.MessageCreate) (string, e
 	}
 	msg := strings.Join(newWords, " ")
 
-	return msg, nil
+	s.ChannelMessageSend(m.ChannelID, msg)
 }
