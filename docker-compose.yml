@@ -15,9 +15,6 @@ services:
   app:
     build: .
     container_name: emotitron_app
-    environment:
-      - BOT_TOKEN=NDk2NDA1NDk5MzI0MTM3NTAy.Gjizsn.tucFLCU-_f2IYpZMarkkL77eDqClKeIs_FnZGE
-      - BOT_PREFIX=!
     ports:
       - 8080:8080
     depends_on:

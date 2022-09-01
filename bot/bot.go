@@ -50,6 +50,9 @@ func Start() {
 	// Declare bot intents
 	s.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
+	// Initalize the commands map
+	commands = make(map[string]func(s *discordgo.Session, m *discordgo.MessageCreate))
+
 	// Declare bot commands
 	addCommands(components.CustomCommands()) // customcommands.go
 	addCommands(components.General())        // general.go
