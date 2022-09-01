@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -14,15 +16,30 @@ import (
 )
 
 var (
-	commands      map[string]func(s *discordgo.Session, m *discordgo.MessageCreate)
-	commandPrefix string
+	commands map[string]func(s *discordgo.Session, m *discordgo.MessageCreate)
+	config   Config
 )
+
+type Config struct {
+	Token  string `json:"bot_token"`
+	Prefix string `json:"bot_prefix"`
+}
 
 // Starts and returns a pointer to the bot session
 func Start() {
-	token := os.Getenv("BOT_TOKEN")
-	commandPrefix = os.Getenv("BOT_PREFIX")
+	// Open the config file
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		log.Printf("Error %s opening config.json", err)
+	}
+	defer configFile.Close()
 
+	// Read the config file
+	byteValue, _ := ioutil.ReadAll(configFile)
+	json.Unmarshal(byteValue, &config)
+
+	// Extract the token and start the bot
+	token := config.Token
 	s, err := discordgo.New("Bot " + token)
 
 	if err != nil {
@@ -75,7 +92,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Check for invoking command
-	if strings.HasPrefix(m.Content, commandPrefix) {
+	if strings.HasPrefix(m.Content, config.Prefix) {
 		// Extract the command name
 		command := strings.Split(m.Content[1:], " ")[0]
 
