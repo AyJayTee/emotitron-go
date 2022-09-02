@@ -2,7 +2,14 @@ package components
 
 import "github.com/bwmarrin/discordgo"
 
-func Help() *discordgo.MessageEmbed {
+// Returns a map of commands provided by the general component
+func General() map[string]func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return map[string]func(s *discordgo.Session, m *discordgo.MessageCreate){
+		"help": help,
+	}
+}
+
+func help(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Create the embed
 	embed := discordgo.MessageEmbed{Title: "Commands available", Description: ""}
 
@@ -94,5 +101,5 @@ func Help() *discordgo.MessageEmbed {
 	}
 	embed.Fields = append(embed.Fields, &listResponsesField)
 
-	return &embed
+	s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 }

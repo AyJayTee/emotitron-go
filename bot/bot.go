@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -14,15 +16,30 @@ import (
 )
 
 var (
-	commands      []string
-	commandPrefix string
+	commands map[string]func(s *discordgo.Session, m *discordgo.MessageCreate)
+	config   Config
 )
+
+type Config struct {
+	Token  string `json:"bot_token"`
+	Prefix string `json:"bot_prefix"`
+}
 
 // Starts and returns a pointer to the bot session
 func Start() {
-	token := os.Getenv("BOT_TOKEN")
-	commandPrefix = os.Getenv("BOT_PREFIX")
+	// Open the config file
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		log.Printf("Error %s opening config.json", err)
+	}
+	defer configFile.Close()
 
+	// Read the config file
+	byteValue, _ := ioutil.ReadAll(configFile)
+	json.Unmarshal(byteValue, &config)
+
+	// Extract the token and start the bot
+	token := config.Token
 	s, err := discordgo.New("Bot " + token)
 
 	if err != nil {
@@ -33,14 +50,15 @@ func Start() {
 	// Declare bot intents
 	s.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
+	// Initalize the commands map
+	commands = make(map[string]func(s *discordgo.Session, m *discordgo.MessageCreate))
+
 	// Declare bot commands
-	commands = []string{
-		"help",                  // general.go
-		"add", "remove", "list", // customcommands.go
-		"christranslate",       // memes.go
-		"remindme", "forgetme", // reminders.go
-		"addresponse", "removeresponse", "modifytrigger", "modifyresponse", "listresponses", // responses.go
-	}
+	addCommands(components.CustomCommands()) // customcommands.go
+	addCommands(components.General())        // general.go
+	addCommands(components.Memes())          // memes.go
+	addCommands(components.Reminders())      // reminders.go
+	addCommands(components.Responses())      // responses.go
 
 	// Add handlers
 	s.AddHandler(messageCreate)
@@ -77,38 +95,49 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Check for invoking command
-	if strings.HasPrefix(m.Content, commandPrefix) {
-		// Check for proper command
-		for _, c := range commands {
-			if words[0] == commandPrefix+c {
-				err := invokeCommand(c, s, m)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, err.Error())
-					return
-				}
-				return
-			}
-		}
-
-		// Check for custom command
-		if len(words) == 1 {
-			msg, err := components.GetCustomCommand(m)
-			if err != nil {
-				if err.Error() == "sql: no rows in result set" {
-					// Command does not exist so ignore this case
-					return
-				}
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-				return
-			}
-			if msg != "" {
-				s.ChannelMessageSend(m.ChannelID, msg)
-			}
-			return
-		}
+	if strings.HasPrefix(m.Content, config.Prefix) {
+		checkForCommand(words, s, m)
 	}
 
 	// Check for response trigger
+	checkForResponse(words, s, m)
+}
+
+func checkForCommand(words []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Guard clause for not beginning with prefix
+	if !strings.HasPrefix(words[0], config.Prefix) {
+		return
+	}
+
+	// Extract the command name
+	command := words[0][1:]
+
+	// Check for proper command
+	if ok := invokeCommand(command, s, m); ok {
+		return
+	}
+
+	// Ignore if more than one word is in the message
+	if len(words) > 1 {
+		return
+	}
+
+	// Check for custom command
+	msg, err := components.GetCustomCommand(m)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			// Command does not exist so ignore this case
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+	if msg != "" {
+		s.ChannelMessageSend(m.ChannelID, msg)
+	}
+}
+
+func checkForResponse(words []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	for _, w := range words {
 		if components.CheckForResponseTrigger(w) {
 			response, err := components.GetResponseValue(w)
@@ -123,98 +152,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCreate) error {
-	switch command {
-	case "help":
-		embed := components.Help()
-		s.ChannelMessageSendEmbed(m.ChannelID, embed)
-
-	case "add":
-		msg, err := components.AddCustomCommand(commands, m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "remove":
-		msg, err := components.RemoveCustomCommand(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "list":
-		embed, err := components.ListCustomCommands(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSendEmbed(m.ChannelID, embed)
-		return nil
-
-	case "christranslate":
-		msg, err := components.ChrisTranslate(s, m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "remindme":
-		msg, err := components.RemindMe(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "forgetme":
-		msg, err := components.ForgetMe(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "addresponse":
-		msg, err := components.AddResponse(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "removeresponse":
-		msg, err := components.RemoveResponse(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "modifytrigger":
-		msg, err := components.ModifyTrigger(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-		return nil
-
-	case "modifyresponse":
-		msg, err := components.MofifyResponse(m)
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSend(m.ChannelID, msg)
-
-	case "listresponses":
-		msg, err := components.ListResponses()
-		if err != nil {
-			return err
-		}
-		s.ChannelMessageSendEmbed(m.ChannelID, msg)
+func invokeCommand(command string, s *discordgo.Session, m *discordgo.MessageCreate) bool {
+	if command, ok := commands[command]; ok {
+		command(s, m)
+		return true
 	}
+	return false
+}
 
-	return nil
+func addCommands(commandsToAdd map[string]func(s *discordgo.Session, m *discordgo.MessageCreate)) {
+	for k, v := range commandsToAdd {
+		commands[k] = v
+	}
 }
